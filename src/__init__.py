@@ -9,5 +9,5 @@ db = SQLAlchemy(app)
 
 from .user import Users
 from .auth import Auth
-from .project import Projects, SingleProject
+from .project import Projects, SingleProject, Upload
 from .action import Actions, SingleProjectAction, SingleAction, ProjectAction

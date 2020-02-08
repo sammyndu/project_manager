@@ -135,7 +135,7 @@ class SingleProject(Resource):
         return {'msg':'Project is deleted'}
 
 @namespace.route("/api/projects/<projectId>/upload")
-class Projects(Resource):
+class Upload(Resource):
     @namespace.doc(description='Upload user stories file to database')
     @token_required
     def put(self, current_user):
