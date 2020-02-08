@@ -12,6 +12,8 @@ class Projects(Resource):
     def get(self, current_user):
         try:
             word =  request.args.get("search")
+            limit_ =  request.args.get("limit")
+            offset_ =  request.args.get("offset")
             if word:
                 project = db.session.query(Project).filter(Project.name.contains(word) | Project.description.contains(word)).all()
                 if project:
@@ -23,6 +25,17 @@ class Projects(Resource):
 
                 else:
                     return {"msg": "no projects matching "+word+" in the database"}, 404
+            elif offset_ and limit_:
+                project = db.session.query(Project).limit(limit_).offset(offset_)
+                if project:
+                    project_list = []
+                    for i in project:
+                        project_list.append({'id':i.id, 'name':i.name, 'description':i.description, 'completed':i.completed})
+
+                    return jsonify(project_list)
+
+                else:
+                    return {"msg": "no projects in the database"}, 404
             else:
                 project = db.session.query(Project).all()
                 if project:
