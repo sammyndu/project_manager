@@ -1,9 +1,8 @@
 from src import app, db, sqlalchemy
-from flask import request, jsonify, make_response, Response
+from flask import request, jsonify
 from flask_restplus import Resource
 from src.model import Project
 from src.user import namespace
-from datetime import datetime
 from .auth import token_required
 
 @namespace.route("/api/projects")
