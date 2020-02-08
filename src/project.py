@@ -10,16 +10,32 @@ class Projects(Resource):
     @namespace.doc(description='list all projects')
     @token_required
     def get(self, current_user):
-        project = db.session.query(Project).all()
-        if project:
-            project_list = []
-            for i in project:
-                project_list.append({'id':i.id, 'name':i.name, 'description':i.description, 'completed':i.completed})
+        try:
+            word =  request.args.get("search")
+            if word:
+                project = db.session.query(Project).filter(Project.name.contains(word) | Project.description.contains(word)).all()
+                if project:
+                    project_list = []
+                    for i in project:
+                        project_list.append({'id':i.id, 'name':i.name, 'description':i.description, 'completed':i.completed})
 
-            return jsonify(project_list)
+                    return jsonify(project_list)
 
-        else:
-            return {"msg": "no projects in the database"}
+                else:
+                    return {"msg": "no projects matching "+word+" in the database"}, 404
+            else:
+                project = db.session.query(Project).all()
+                if project:
+                    project_list = []
+                    for i in project:
+                        project_list.append({'id':i.id, 'name':i.name, 'description':i.description, 'completed':i.completed})
+
+                    return jsonify(project_list)
+
+                else:
+                    return {"msg": "no projects in the database"}
+        except:
+            return {"msg":'Server Error'}, 500
 
     @namespace.doc(description='Add a new project')
     @token_required
@@ -110,4 +126,4 @@ class SingleProject(Resource):
         else:
             return {'msg':'Project does not exist'}, 404
 
-        return {'msg':'Projet is deleted'}
+        return {'msg':'Project is deleted'}
