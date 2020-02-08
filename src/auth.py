@@ -16,7 +16,7 @@ def token_required(f):
         if 'x-access-token' in request.headers:
             token = request.headers['x-access-token']
         else:
-            return {"msg":"token is missing"}
+            return {"msg":"Unauthorized"}, 403
     
         if token: 
             # if there is a token, it decodes it and passes the user back to the function to access the logged 
