@@ -8,3 +8,4 @@ app.config.from_pyfile("config.py", silent=True)
 db = SQLAlchemy(app)
 
 from .user import Users
+from .auth import Auth
