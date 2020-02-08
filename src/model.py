@@ -14,6 +14,7 @@ class Project(db.Model):
     name = db.Column(db.String(100), nullable=False, unique=True)
     description = db.Column(db.String(100), nullable=False)
     completed = db.Column(db.Boolean(), default=False)
+    user_stories = db.Column(db.String(100), nullable=True)
     actions = db.relationship('Action', backref='Users')
 
 class Action(db.Model):

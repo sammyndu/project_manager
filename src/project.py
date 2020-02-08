@@ -4,6 +4,23 @@ from flask_restplus import Resource
 from src.model import Project
 from src.user import namespace
 from .auth import token_required
+from werkzeug.utils import secure_filename
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.',1)[1].lower() in Allowed_Extensions
+
+def get_project_list(project, request_args=""):
+    if project:
+        project_list = []
+        for i in project:
+            project_list.append({'id':i.id, 'name':i.name, 'description':i.description, 'completed':i.completed})
+
+        return jsonify(project_list)
+    else:
+        if request_args == 'search':
+            return {"msg": "no projects matching "+word+" in the database"}, 404
+        else:
+            return {"msg": "no projects in the database"}, 404
 
 @namespace.route("/api/projects")
 class Projects(Resource):
@@ -16,37 +33,13 @@ class Projects(Resource):
             offset_ =  request.args.get("offset")
             if word:
                 project = db.session.query(Project).filter(Project.name.contains(word) | Project.description.contains(word)).all()
-                if project:
-                    project_list = []
-                    for i in project:
-                        project_list.append({'id':i.id, 'name':i.name, 'description':i.description, 'completed':i.completed})
-
-                    return jsonify(project_list)
-
-                else:
-                    return {"msg": "no projects matching "+word+" in the database"}, 404
+                return get_project_list(project, "search")
             elif offset_ and limit_:
                 project = db.session.query(Project).limit(limit_).offset(offset_)
-                if project:
-                    project_list = []
-                    for i in project:
-                        project_list.append({'id':i.id, 'name':i.name, 'description':i.description, 'completed':i.completed})
-
-                    return jsonify(project_list)
-
-                else:
-                    return {"msg": "no projects in the database"}, 404
+                return get_project_list(project)
             else:
                 project = db.session.query(Project).all()
-                if project:
-                    project_list = []
-                    for i in project:
-                        project_list.append({'id':i.id, 'name':i.name, 'description':i.description, 'completed':i.completed})
-
-                    return jsonify(project_list)
-
-                else:
-                    return {"msg": "no projects in the database"}
+                return get_project_list(project)
         except:
             return {"msg":'Server Error'}, 500
 
@@ -140,3 +133,26 @@ class SingleProject(Resource):
             return {'msg':'Project does not exist'}, 404
 
         return {'msg':'Project is deleted'}
+
+@namespace.route("/api/projects/<projectId>/upload")
+class Projects(Resource):
+    @namespace.doc(description='Upload user stories file to database')
+    @token_required
+    def put(self, current_user):
+        try:
+            Allowed_Extensions = set(['txt', 'pdf', 'png', 'jpg', 'jpeg'])
+
+            if 'user_stories' not in request.files:
+                return {"msg": "no file found"}, 404
+            user_stories = request.files.get('user_stories')
+            if user_stories.filename == "":
+                return {"msg": "no file found"}, 400
+            if user_stories and allowed_file(user_stories.filename):
+                filename =  secure_filename(user_stories.filename)
+                user_stories.save(os.path.join(app.config['UPLOAD_URL'], filename))
+                return {"msg": "file succesfully uploaded"}, 200
+            else:
+                return {"msg": "allowed file types are txt, pdf, png, jpg, jpeg"}, 400
+        except:
+            return {"msg":'Server Error'}, 500
+
