@@ -9,3 +9,4 @@ db = SQLAlchemy(app)
 
 from .user import Users
 from .auth import Auth
+from .project import Projects, SingleProject
