@@ -1,3 +1,4 @@
+import os
 from src import app, db, sqlalchemy
 from flask import request, jsonify
 from flask_restplus import Resource
@@ -7,13 +8,14 @@ from .auth import token_required
 from werkzeug.utils import secure_filename
 
 def allowed_file(filename):
+    Allowed_Extensions = set(['txt', 'pdf', 'png', 'jpg', 'jpeg'])
     return '.' in filename and filename.rsplit('.',1)[1].lower() in Allowed_Extensions
 
 def get_project_list(project, request_args=""):
     if project:
         project_list = []
         for i in project:
-            project_list.append({'id':i.id, 'name':i.name, 'description':i.description, 'completed':i.completed})
+            project_list.append({'id':i.id, 'name':i.name, 'description':i.description, 'completed':i.completed, "user_stories": i.user_stories})
 
         return jsonify(project_list)
     else:
@@ -21,6 +23,10 @@ def get_project_list(project, request_args=""):
             return {"msg": "no projects matching "+word+" in the database"}, 404
         else:
             return {"msg": "no projects in the database"}, 404
+
+@app.errorhandler(413)
+def request_entity_too_large(error):
+    return {"msg":"file size cannot be more than 1mb"}
 
 @namespace.route("/api/projects")
 class Projects(Resource):
@@ -138,10 +144,8 @@ class SingleProject(Resource):
 class Upload(Resource):
     @namespace.doc(description='Upload user stories file to database')
     @token_required
-    def put(self, current_user):
+    def put(self, current_user, projectId):
         try:
-            Allowed_Extensions = set(['txt', 'pdf', 'png', 'jpg', 'jpeg'])
-
             if 'user_stories' not in request.files:
                 return {"msg": "no file found"}, 404
             user_stories = request.files.get('user_stories')
@@ -149,16 +153,19 @@ class Upload(Resource):
                 return {"msg": "no file found"}, 400
             if user_stories and allowed_file(user_stories.filename):
                 filename =  secure_filename(user_stories.filename)
-                user_stories.save(os.path.join(app.config['UPLOAD_URL'], filename))
                 project = db.session.query(Project).filter(Project.id==projectId).first()
                 if project:
-                    project.user_stories = filename
+                    project.user_stories = os.path.join(app.config['UPLOAD_URL'], filename)
                     db.session.commit()
+                    user_stories.save(os.path.join(app.config['UPLOAD_URL'], filename))
                     return {"msg": "file succesfully uploaded"}, 200
                 else:
                     return {'msg':'Project does not exist'}, 404
             else:
                 return {"msg": "allowed file types are txt, pdf, png, jpg, jpeg"}, 400
-        except:
-            return {"msg":'Server Error'}, 500
+        except Exception as e:
+            if e.code == 413:
+                return {"msg":'file cannot be more than 1mb'}, 413
+            else:
+                return {"msg":'Server Error'}, 500
 
