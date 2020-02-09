@@ -1,11 +1,14 @@
 import os
 from src import app, db, sqlalchemy
 from flask import request, jsonify
-from flask_restplus import Resource
+from flask_restplus import Resource, fields
 from src.model import Project
 from src.user import namespace
 from .auth import token_required
 from werkzeug.utils import secure_filename
+
+post_fields = namespace.model("Projects", {'name':fields.String, 'description': fields.String})
+patch_fields = namespace.model("Projects_patch", {'completed':fields.Boolean})
 
 def allowed_file(filename):
     Allowed_Extensions = set(['txt', 'pdf', 'png', 'jpg', 'jpeg'])
@@ -50,6 +53,7 @@ class Projects(Resource):
             return {"msg":'Server Error'}, 500
 
     @namespace.doc(description='Add a new project')
+    @namespace.expect(post_fields)
     @token_required
     def post(self, current_user):
         req = request.get_json()
@@ -82,6 +86,7 @@ class SingleProject(Resource):
             return {"msg":"Project does not exist"}, 404
 
     @namespace.doc(description='Update a project')
+    @namespace.expect(post_fields)
     @token_required
     def put(self, current_user, projectId):
         project = db.session.query(Project).filter(Project.id==projectId).first()
@@ -106,6 +111,7 @@ class SingleProject(Resource):
         return {"msg":"Project updated"}, 200
 
     @namespace.doc(description='Update thee completed property of a project')
+    @namespace.expect(patch_fields)
     @token_required
     def patch(self, current_user, projectId):
         project = db.session.query(Project).filter(Project.id==projectId).first()

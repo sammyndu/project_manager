@@ -1,6 +1,6 @@
 from src import app, db, sqlalchemy
 from flask import request
-from flask_restplus import Api, Resource
+from flask_restplus import Api, Resource, fields
 from werkzeug.security import check_password_hash, generate_password_hash
 from src.model import User
 
@@ -8,9 +8,12 @@ api =  Api(app, version='1.0', title='Projects & Actions Api', description="Stor
 
 namespace = api.namespace('', description='Main API Routes')
 
+post_fields = namespace.model("Register", {'email': fields.String, 'password':fields.String})
+
 @namespace.route("/api/users/register")
 class Users(Resource):
     @namespace.doc(description='Add a user')
+    @namespace.expect(post_fields)
     def post(self):
         req = request.get_json()
         email = req.get('email')

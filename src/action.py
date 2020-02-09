@@ -1,10 +1,11 @@
 from src import app, db, sqlalchemy
 from flask import request, jsonify
-from flask_restplus import Resource
+from flask_restplus import Resource, fields
 from src.model import Project, Action
 from src.user import namespace
 from .auth import token_required
 
+post_fields = namespace.model("Actions", {'description': fields.String, 'note':fields.String})
 @namespace.route("/api/projects/<int:projectId>/actions")
 class ProjectAction(Resource):
     @namespace.doc(description='Retrieve all actions for a particular project')
@@ -21,6 +22,7 @@ class ProjectAction(Resource):
             return {"msg": "no actions with this project id in the database"}
 
     @namespace.doc(description='Add a new action under an existing project')
+    @namespace.expect(post_fields)
     @token_required
     def post(self, current_user, projectId):
 
@@ -56,6 +58,7 @@ class SingleProjectAction(Resource):
             return {"msg":"Action with this id and project id does not exist"}, 404
 
     @namespace.doc(description='Update a project')
+    @namespace.expect(post_fields)
     @token_required
     def put(self, current_user, projectId, actionId):
         try:
