@@ -150,7 +150,13 @@ class Upload(Resource):
             if user_stories and allowed_file(user_stories.filename):
                 filename =  secure_filename(user_stories.filename)
                 user_stories.save(os.path.join(app.config['UPLOAD_URL'], filename))
-                return {"msg": "file succesfully uploaded"}, 200
+                project = db.session.query(Project).filter(Project.id==projectId).first()
+                if project:
+                    project.user_stories = filename
+                    db.session.commit()
+                    return {"msg": "file succesfully uploaded"}, 200
+                else:
+                    return {'msg':'Project does not exist'}, 404
             else:
                 return {"msg": "allowed file types are txt, pdf, png, jpg, jpeg"}, 400
         except:
