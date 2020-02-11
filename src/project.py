@@ -33,6 +33,10 @@ def get_project_list(project, request_args=""):
         else:
             return {"msg": "no projects in the database"}, 404
 
+@app.errorhandler(413)
+def request_entity_too_large(error):
+    return {'msg': 'file cannot be more than 5mb'}
+
 @namespace.route("/api/projects")
 class Projects(Resource):
     @namespace.doc(description='list all projects')
@@ -189,9 +193,6 @@ class Upload(Resource):
             else:
                 return {"msg": "allowed file types are txt, pdf, png, jpg, jpeg"}, 400
 
-        except Exception as e:
-            if e.code == 413:
-                return {"msg":'file cannot be more than 5mb'}, 413
-            else:
-                return {"msg":'Server Error'}, 500
+        except:
+            return {"msg":'Server Error'}, 500
 
