@@ -9,7 +9,7 @@ import datetime
 from functools import wraps
 
 def token_required(f):
-    '''A decorated function to check authorize users for particular routes'''
+    '''A decorated function to check authorized users for particular routes'''
     @wraps(f)
     def decorated(*args, **kwargs):
         #checks if the token was sent in the header
@@ -25,12 +25,12 @@ def token_required(f):
                 data = jwt.decode(token, app.config['SECRET_KEY'])
                 current_user = db.session.query(User).filter(User.id == data['id']).first()
             except:
-                return {"error":"invalid token"}
+                return {"error":"invalid token"}, 498
             args = list(args)
             args.insert(1, current_user)
             args = tuple(args)
         else:
-            return {"msg":"token is missing"}
+            return {"msg":"token is missing"}, 404
 
         return f(*args, **kwargs)
 

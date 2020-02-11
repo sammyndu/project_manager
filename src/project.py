@@ -11,10 +11,12 @@ post_fields = namespace.model("Projects", {'name':fields.String, 'description': 
 patch_fields = namespace.model("Projects_patch", {'completed':fields.Boolean})
 
 def allowed_file(filename):
+    '''Checks if a file extension is allowed and returns boolean'''
     Allowed_Extensions = set(['txt', 'pdf', 'png', 'jpg', 'jpeg'])
     return '.' in filename and filename.rsplit('.',1)[1].lower() in Allowed_Extensions
 
 def get_project_list(project, request_args=""):
+    '''Takes in the project query and return project list or error where neccesary'''
     if project:
         project_list = []
         for i in project:
@@ -27,15 +29,12 @@ def get_project_list(project, request_args=""):
         else:
             return {"msg": "no projects in the database"}, 404
 
-@app.errorhandler(413)
-def request_entity_too_large(error):
-    return {"msg":"file size cannot be more than 1mb"}
-
 @namespace.route("/api/projects")
 class Projects(Resource):
     @namespace.doc(description='list all projects')
     @token_required
     def get(self, current_user):
+        '''Retrieve all projects'''
         try:
             word =  request.args.get("search")
             limit_ =  request.args.get("limit")
@@ -43,12 +42,15 @@ class Projects(Resource):
             if word:
                 project = db.session.query(Project).filter(Project.name.contains(word) | Project.description.contains(word)).all()
                 return get_project_list(project, "search")
+
             elif offset_ and limit_:
                 project = db.session.query(Project).limit(limit_).offset(offset_)
                 return get_project_list(project)
+
             else:
                 project = db.session.query(Project).all()
                 return get_project_list(project)
+
         except:
             return {"msg":'Server Error'}, 500
 
@@ -56,6 +58,7 @@ class Projects(Resource):
     @namespace.expect(post_fields)
     @token_required
     def post(self, current_user):
+        '''Add a new project'''
         req = request.get_json()
         name = req.get('name')
         description = req.get('description')
@@ -78,6 +81,7 @@ class SingleProject(Resource):
     @namespace.doc(description='Get a single project by Id')
     @token_required
     def get(self, current_user, projectId):
+        '''Get a single project by Id'''
         project = db.session.query(Project).filter(Project.id==projectId).first()
         if project:
             result = {'id':project.id, 'name':project.name, 'description':project.description, 'completed':project.completed}
@@ -89,6 +93,7 @@ class SingleProject(Resource):
     @namespace.expect(post_fields)
     @token_required
     def put(self, current_user, projectId):
+        '''Update a projects name and description properties'''
         project = db.session.query(Project).filter(Project.id==projectId).first()
         if project:
             req = request.get_json()
@@ -110,10 +115,11 @@ class SingleProject(Resource):
 
         return {"msg":"Project updated"}, 200
 
-    @namespace.doc(description='Update thee completed property of a project')
+    @namespace.doc(description='Update the completed property of a project')
     @namespace.expect(patch_fields)
     @token_required
     def patch(self, current_user, projectId):
+        '''Update the completed property of a project'''
         project = db.session.query(Project).filter(Project.id==projectId).first()
         if project:
             req = request.get_json()
@@ -134,6 +140,7 @@ class SingleProject(Resource):
     @namespace.doc(description='Delete a project')
     @token_required
     def delete(self, current_user, projectId):
+        '''Delete a project'''
         project = db.session.query(Project).filter(Project.id==projectId).first()
         if project:
             try:
@@ -151,12 +158,14 @@ class Upload(Resource):
     @namespace.doc(description='Upload user stories file to database')
     @token_required
     def put(self, current_user, projectId):
+        '''Upload user stories file to database'''
         try:
             if 'user_stories' not in request.files:
                 return {"msg": "no file found"}, 404
             user_stories = request.files.get('user_stories')
             if user_stories.filename == "":
                 return {"msg": "no file found"}, 400
+
             if user_stories and allowed_file(user_stories.filename):
                 filename =  secure_filename(user_stories.filename)
                 project = db.session.query(Project).filter(Project.id==projectId).first()
@@ -165,13 +174,15 @@ class Upload(Resource):
                     db.session.commit()
                     user_stories.save(os.path.join(app.config['UPLOAD_URL'], filename))
                     return {"msg": "file succesfully uploaded"}, 200
+
                 else:
                     return {'msg':'Project does not exist'}, 404
             else:
                 return {"msg": "allowed file types are txt, pdf, png, jpg, jpeg"}, 400
+                
         except Exception as e:
             if e.code == 413:
-                return {"msg":'file cannot be more than 1mb'}, 413
+                return {"msg":'file cannot be more than 5mb'}, 413
             else:
                 return {"msg":'Server Error'}, 500
 
