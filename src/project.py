@@ -185,7 +185,6 @@ class Upload(Resource):
                 if project:
                     project.user_stories = os.path.join(app.config['UPLOAD_URL'], filename)
                     db.session.commit()
-                    user_stories.save(os.path.join(app.config['UPLOAD_URL'], filename))
                     return {"msg": "file succesfully uploaded"}, 200
 
                 else:
