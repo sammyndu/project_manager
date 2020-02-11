@@ -38,6 +38,7 @@ def token_required(f):
 
 
 @namespace.route('/api/users/auth')
+@namespace.doc(security="Basic Auth")
 class Auth(Resource):
     def post(self):
         '''Handles authentication verification'''
@@ -48,7 +49,7 @@ class Auth(Resource):
                 token = jwt.encode({'id': query1.id, \
                     'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=60)},\
                         app.config['SECRET_KEY'])
-                return jsonify({'token': token.decode('UTF-8')})
+                return jsonify({'x-access-token': token.decode('UTF-8')})
             else:
                 return {"msg":"Unauthorized"}, 403
                 

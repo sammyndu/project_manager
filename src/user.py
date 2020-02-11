@@ -4,7 +4,15 @@ from flask_restplus import Api, Resource, fields
 from werkzeug.security import check_password_hash, generate_password_hash
 from src.model import User
 
-api =  Api(app, version='1.0', title='Projects & Actions Api', description="Storing user's projects and their actions")
+authorizations={
+    'Basic Auth': {
+        'type':'basic',
+        'in': 'header',
+        'name': 'Authorization'
+    }
+}
+
+api =  Api(app, authorizations=authorizations, version='1.0', title='Projects & Actions Api', description="Storing user's projects and actions")
 
 namespace = api.namespace('', description='Main API Routes')
 

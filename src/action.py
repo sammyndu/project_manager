@@ -3,12 +3,16 @@ from flask import request, jsonify
 from flask_restplus import Resource, fields
 from src.model import Project, Action
 from src.user import namespace
+from src.project import parser
 from .auth import token_required
 
 post_fields = namespace.model("Actions", {'description': fields.String, 'note':fields.String})
+parser.add_argument('x-access-token', location='headers')
+
 @namespace.route("/api/projects/<int:projectId>/actions")
 class ProjectAction(Resource):
     @namespace.doc(description='Retrieve all actions for a particular project')
+    @namespace.expect(parser)
     @token_required
     def get(self, current_user, projectId):
         '''Retrieve all actions for a particular project'''
@@ -24,7 +28,7 @@ class ProjectAction(Resource):
             return {"msg": "no actions with this project id in the database"}
 
     @namespace.doc(description='Add a new action under an existing project')
-    @namespace.expect(post_fields)
+    @namespace.expect(post_fields, parser)
     @token_required
     def post(self, current_user, projectId):
         '''Add a new action under an existing project'''
@@ -50,6 +54,7 @@ class ProjectAction(Resource):
 @namespace.route("/api/projects/<int:projectId>/actions/<int:actionId>")
 class SingleProjectAction(Resource):
     @namespace.doc(description='Retrieve a single action by ID and project ID')
+    @namespace.expect(parser)
     @token_required
     def get(self, current_user, projectId, actionId):
         '''Retrieve a single action by action ID and project ID'''
@@ -63,7 +68,7 @@ class SingleProjectAction(Resource):
             return {"msg":"Action with this id and project id does not exist"}, 404
 
     @namespace.doc(description='Update an action')
-    @namespace.expect(post_fields)
+    @namespace.expect(post_fields, parser)
     @token_required
     def put(self, current_user, projectId, actionId):
         '''Update an action'''
@@ -88,6 +93,7 @@ class SingleProjectAction(Resource):
         return {"msg":"Action updated"}, 200
 
     @namespace.doc(description='Delete an action')
+    @namespace.expect(parser)
     @token_required
     def delete(self, current_user, projectId, actionId):
         '''Delete an action'''
@@ -108,6 +114,7 @@ class SingleProjectAction(Resource):
 @namespace.route("/api/actions")
 class Actions(Resource):
     @namespace.doc(description='Retrieve all actions')
+    @namespace.expect(parser)
     @token_required
     def get(self, current_user):
         '''Retrieve all actions'''
@@ -126,6 +133,7 @@ class Actions(Resource):
 @namespace.route("/api/actions/<int:actionId>")
 class SingleAction(Resource):
     @namespace.doc(description='Retrieve a single action by ID')
+    @namespace.expect(parser)
     @token_required
     def get(self, current_user, actionId):
         '''Retrieve a single action by ID'''

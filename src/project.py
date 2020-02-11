@@ -9,6 +9,10 @@ from werkzeug.utils import secure_filename
 
 post_fields = namespace.model("Projects", {'name':fields.String, 'description': fields.String})
 patch_fields = namespace.model("Projects_patch", {'completed':fields.Boolean})
+parser = namespace.parser()
+file_parser = namespace.parser()
+parser.add_argument('x-access-token', location='headers')
+file_parser.add_argument('user_stories', type='FileStorage', location='files')
 
 def allowed_file(filename):
     '''Checks if a file extension is allowed and returns boolean'''
@@ -32,6 +36,7 @@ def get_project_list(project, request_args=""):
 @namespace.route("/api/projects")
 class Projects(Resource):
     @namespace.doc(description='list all projects')
+    @namespace.expect(parser)
     @token_required
     def get(self, current_user):
         '''Retrieve all projects'''
@@ -55,7 +60,8 @@ class Projects(Resource):
             return {"msg":'Server Error'}, 500
 
     @namespace.doc(description='Add a new project')
-    @namespace.expect(post_fields)
+    @namespace.header('x-access-token')
+    @namespace.expect(post_fields, parser)
     @token_required
     def post(self, current_user):
         '''Add a new project'''
@@ -79,6 +85,7 @@ class Projects(Resource):
 @namespace.route("/api/projects/<int:projectId>")
 class SingleProject(Resource):
     @namespace.doc(description='Get a single project by Id')
+    @namespace.expect(parser)
     @token_required
     def get(self, current_user, projectId):
         '''Get a single project by Id'''
@@ -90,7 +97,7 @@ class SingleProject(Resource):
             return {"msg":"Project does not exist"}, 404
 
     @namespace.doc(description='Update a project')
-    @namespace.expect(post_fields)
+    @namespace.expect(post_fields, parser)
     @token_required
     def put(self, current_user, projectId):
         '''Update a projects name and description properties'''
@@ -116,7 +123,7 @@ class SingleProject(Resource):
         return {"msg":"Project updated"}, 200
 
     @namespace.doc(description='Update the completed property of a project')
-    @namespace.expect(patch_fields)
+    @namespace.expect(patch_fields, parser)
     @token_required
     def patch(self, current_user, projectId):
         '''Update the completed property of a project'''
@@ -138,6 +145,7 @@ class SingleProject(Resource):
         return {"msg":"Project updated"}, 200
 
     @namespace.doc(description='Delete a project')
+    @namespace.expect(parser)
     @token_required
     def delete(self, current_user, projectId):
         '''Delete a project'''
@@ -156,6 +164,7 @@ class SingleProject(Resource):
 @namespace.route("/api/projects/<projectId>/upload")
 class Upload(Resource):
     @namespace.doc(description='Upload user stories file to database')
+    @namespace.expect(parser, file_parser)
     @token_required
     def put(self, current_user, projectId):
         '''Upload user stories file to database'''
@@ -179,7 +188,7 @@ class Upload(Resource):
                     return {'msg':'Project does not exist'}, 404
             else:
                 return {"msg": "allowed file types are txt, pdf, png, jpg, jpeg"}, 400
-                
+
         except Exception as e:
             if e.code == 413:
                 return {"msg":'file cannot be more than 5mb'}, 413
